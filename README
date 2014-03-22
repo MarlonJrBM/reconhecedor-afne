@@ -1,0 +1,25 @@
+TP1 da de FTC (2014/1). Especificação:
+
+Implemente um programa que receba como entrada um AFN Estendido (AFNE) e um conjunto de palavras do
+alfabeto, e retorne um AFN correspondente. Em seguida ele deverá veriﬁcar se as palavras fornecidas pertencem à
+linguagem deﬁnida pelo AFN correspondente.
+
+Os comentários inseridos nos exemplos de arquivos de entrada e saída não devem fazer parte dos arquivos criados.
+Eles foram inseridos apenas para facilitar o entendimento do padrão deﬁnido.
+O seguinte algoritmo pode ser usado para realizar as transições a partir de um conjunto de estados x e uma palavra
+w, retornando o conjunto de estados alcançados:
+Entradas: x  E, w 2 S
+
+enquanto x 6= 0/ e w 6= l faca
+seja w = ay, a 2 S, y 2 S
+
+;
+x :=
+S
+e2x d(e;a);
+w := y
+ﬁm enquanto
+retorne x
+
+Este algoritmo pode ser útil para veriﬁcar se uma palavra é reconhecida pelo AFN. Outra alternativa é converter o
+AFN para AFD e então veriﬁcar se ele reconhece as palavras.
