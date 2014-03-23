@@ -1,4 +1,4 @@
-TP1 da de FTC (2014/1). Especificação:
+TP1 de FTC (2014/1). Especificação:
 
 Implemente um programa que receba como entrada um AFN Estendido (AFNE) e um conjunto de palavras do
 alfabeto, e retorne um AFN correspondente. Em seguida ele deverá veriﬁcar se as palavras fornecidas pertencem à
