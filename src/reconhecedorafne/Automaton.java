@@ -84,73 +84,29 @@ public class Automaton {
             //reads the input file and saves all the necessary info
             //about the FSM
     {
-        String currWord = null;
-        String currState = null;
-        String currTransition = null;
+       
         Scanner input = null;
-        int row, col;
         
         try {
             input = new Scanner(new BufferedReader(new FileReader(fileName)));
             
-            while (input.hasNext()) {
-                //reads the states
-                currWord = input.next();
-                if (currWord.contentEquals(";")) break;
-                //System.out.println(currWord);
-                states.add(currWord);
-            }
+            readAux(input,states,false);
             
-            while (input.hasNext()) {
-                //reads the alphabet
-                currWord = input.next();
-                if (currWord.contentEquals(";")) break;
-                //System.out.println(currWord);
-                alphabet.add(currWord);
-            }
+            readAux(input, alphabet, false);
             
             transitionTable = new String[states.size()][states.size()];
+   
+            initializeMatrix(transitionTable);
             
-            while (input.hasNext()) 
-                //reads the transition function
-            {
-                currWord = input.next();
-                if (currWord.contentEquals(";")) break;
-                currState = input.next();
-                currTransition = input.next();
-                row = states.indexOf(currWord);
-                col = states.indexOf(currState);
-                transitionTable[row][col] = currTransition;
-                currWord = input.next();     
-            }
+            readAux(input, states, true);
             
-            while (input.hasNext())
-                //reads the initial states
-            {
-                currWord = input.next();
-                if (currWord.contentEquals(";")) break;
-                //System.out.println(currWord);
-                initialStates.add(currWord);
-            }
+            readAux(input, initialStates, false);
             
-            while (input.hasNext())
-                //reads the final states
-            {
-                currWord = input.next();
-                if (currWord.contentEquals(";")) break;
-                //System.out.println(currWord);
-                finalStates.add(currWord);
-            }
+            readAux(input, finalStates, false);
             
-            while (input.hasNext())
-                //reads the words
-            {
-                currWord = input.next();
-                if (currWord.contentEquals(";")) break;
-                //System.out.println(currWord);
-                words.add(currWord);
-            }
-            
+            readAux(input, words, false);
+           
+             
             
          
         } finally {
@@ -183,6 +139,23 @@ public class Automaton {
             {
                 output.print(ii + " ");
             }
+            
+            output.println(";");
+            
+            //TODO - print the transition table
+            
+            for (int ii=0;ii<states.size();ii++)
+            {
+                for (int jj=0;jj<states.size();jj++)
+                {
+                    if (!transitionTable[ii][jj].isEmpty())
+                            {
+                                output.printf("%s %s %s ;\n", states.get(ii), 
+                                        states.get(jj), transitionTable[ii][jj]);
+                            }
+                }
+            }
+            
             output.println(";");
             for (String ii: initialStates)
             {
@@ -207,5 +180,20 @@ public class Automaton {
         }
         
     }
+ 
+    private void initializeMatrix(String[][] s)
+    {
+       
+       for (int ii=0;ii<states.size();ii++)
+       {
+           for (int jj=0;jj<states.size();jj++)
+           {
+               s[ii][jj] = "";
+           }
+       }
+
+        
+    }
+    
     
 }
