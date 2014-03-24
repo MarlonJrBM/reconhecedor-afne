@@ -21,8 +21,7 @@ public class Automaton {
     private final ArrayList<String> alphabet;
     private final ArrayList<String> initialStates, finalStates;
     private final ArrayList<String> words;
-    
-    private String[][] transitionTable;
+    private ArrayList<String>[][] transitionTable;
     
     Automaton(String fileName) throws IOException           
     {
@@ -34,46 +33,9 @@ public class Automaton {
         processInput(fileName);
     }
     
-    public void printSets()
-            /* Prints to std output the properties of the FSM. 
-            For debbuging purposes */
-    {
-        System.out.println(states);
-        System.out.println(alphabet);
-    }
     
-    private void readAux(Scanner s, ArrayList<String> a, boolean isTransition)
-    {
-        String currWord, currState, currTransition;
-        int row, col;
-        
-        if (!isTransition)
-            //we are reading the states, alphabet or the words, this is more simple
-        {
-            while (s.hasNext()) {
-                    //reads the states
-                    currWord = s.next();
-                    if (currWord.contentEquals(";")) break;
-                    a.add(currWord);
-                }
-        }
-        else
-            //we are reading the transition table, this is more complicated
-        {
-            while (s.hasNext()) 
-                //reads the transition function
-            {
-                currWord = s.next();
-                if (currWord.contentEquals(";")) break;
-                currState = s.next();
-                currTransition = s.next();
-                row = a.indexOf(currWord);
-                col = a.indexOf(currState);
-                transitionTable[row][col] = currTransition;
-                currWord = s.next();     
-            }
-        }
-    }
+    
+    
     
     /**
      * This function reads the GNFA from the input file
@@ -94,7 +56,7 @@ public class Automaton {
             
             readAux(input, alphabet, false);
             
-            transitionTable = new String[states.size()][states.size()];
+            transitionTable = new ArrayList[states.size()][states.size()];
    
             initializeMatrix(transitionTable);
             
@@ -106,15 +68,22 @@ public class Automaton {
             
             readAux(input, words, false);
            
-             
-            
+                   
          
-        } finally {
+        }
+        catch(FileNotFoundException e)
+        {
+            System.out.println("FileNotFoundException was thrown. Please verify that the input and"
+                    + " output files are being passed as arguments.%n Ex: ./program input.txt output.txt");
+        }
+        finally {
             if (input != null) {
                 input.close();
             }
         }
     }
+    
+    
     
     /**
      * This function writes the result of the conversion from the GNFA to
@@ -148,11 +117,12 @@ public class Automaton {
             {
                 for (int jj=0;jj<states.size();jj++)
                 {
-                    if (!transitionTable[ii][jj].isEmpty())
-                            {
-                                output.printf("%s %s %s ;\n", states.get(ii), 
-                                        states.get(jj), transitionTable[ii][jj]);
-                            }
+                    for (String kk: transitionTable[ii][jj])
+                    {
+                        output.printf("%s %s %s ;\n", states.get(ii), 
+                                        states.get(jj), kk);
+                    }
+                    
                 }
             }
             
@@ -173,6 +143,11 @@ public class Automaton {
             }
             output.println(";");
         }
+        catch(FileNotFoundException e)
+        {
+            System.out.println("FileNotFoundException was thrown. Please verify that the input and"
+                    + " output files are being passed as arguments.%n Ex: ./program input.txt output.txt");
+        }
         finally
         {
             if (output!=null)
@@ -180,15 +155,57 @@ public class Automaton {
         }
         
     }
+    
+    public void printSets()
+            /* Prints to std output the properties of the FSM. 
+            For debbuging purposes */
+    {
+        System.out.println(states);
+        System.out.println(alphabet);
+    }
+    
+    
+    private void readAux(Scanner s, ArrayList<String> a, boolean isTransition)
+    {
+        String currWord, currState, currTransition;
+        int row, col;
+        
+        if (!isTransition)
+            //we are reading the states, alphabet or the words, this is more simple
+        {
+            while (s.hasNext()) {
+                    //reads the states
+                    currWord = s.next();
+                    if (currWord.contentEquals(";")) break;
+                    a.add(currWord);
+                }
+        }
+        else
+            //we are reading the transition table, this is more complicated
+        {
+            while (s.hasNext()) 
+                //reads the transition function
+            {
+                currWord = s.next();
+                if (currWord.contentEquals(";")) break;
+                currState = s.next();
+                currTransition = s.next();
+                row = a.indexOf(currWord);
+                col = a.indexOf(currState);
+                transitionTable[row][col].add(currTransition); 
+                currWord = s.next();     
+            }
+        }
+    }
  
-    private void initializeMatrix(String[][] s)
+    private void initializeMatrix(ArrayList<String>[][] s)
     {
        
        for (int ii=0;ii<states.size();ii++)
        {
            for (int jj=0;jj<states.size();jj++)
            {
-               s[ii][jj] = "";
+               s[ii][jj] = new ArrayList();
            }
        }
 
