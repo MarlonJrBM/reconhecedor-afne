@@ -25,7 +25,7 @@ public class ReconhecedorAFNE {
         
         try {
         Automaton fsm = new Automaton(args[0]);
-        fsm.printSets();
+        //fsm.printSets();
         fsm.processOutput(args[1]);
         }
         catch(ArrayIndexOutOfBoundsException e)

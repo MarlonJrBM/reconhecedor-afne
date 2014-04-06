@@ -23,7 +23,7 @@ public class Automaton {
     private final TreeSet<String> states;
     private final TreeSet<String> alphabet;
     private final TreeSet<String> initialStates, finalStates;
-    private final TreeSet<String> words;
+    private final ArrayList<String> words;
     private final transitionMap transitionFunction;
     
     Automaton(String fileName) throws IOException           
@@ -32,7 +32,7 @@ public class Automaton {
         alphabet = new TreeSet();
         initialStates = new TreeSet();
         finalStates = new TreeSet();
-        words = new TreeSet();
+        words = new ArrayList();
         transitionFunction = new transitionMap();
         processInput(fileName);
         convertToRegular();
@@ -112,8 +112,8 @@ public class Automaton {
                 output.print(ii + " ");
             }
             
-            output.println(";");
-            
+            output.println(";\n");
+             
             for (Map.Entry<Tupla,TreeSet<String>> entry : transitionFunction.entrySet()) 
             {
                 currState = entry.getKey().getState();
@@ -127,7 +127,7 @@ public class Automaton {
             }
             
             
-            output.println(";");
+            output.println(";\n");
             for (String ii: initialStates)
             {
                 output.print(ii + " ");
@@ -137,7 +137,7 @@ public class Automaton {
             {
                 output.print(ii + " ");
             }
-            output.println(";");
+            output.println(";\n");
             for (String ii: words)
             {
                 if (recognizeWord(ii))
@@ -171,8 +171,58 @@ public class Automaton {
     {
         //TODO - This method must read the FSM somehow and determine if the
         //word is accepted by it
-        
-        return true;
+      
+        for (String initialState: initialStates)
+        {
+            if (matches(word, initialState))
+                return true;
+        }
+           
+        return false;
+    }
+    
+    public boolean matches(String word, String currState)
+    {
+         return recursiveAux(word, currState);
+    }
+    
+    private boolean recursiveAux(String word, String currState)
+    {
+       if (word.length()==0)
+       {
+           if (isFinalState(currState)) return true;  
+             return false;              
+       }
+       else
+       {
+           String currSymbol = word.substring(0,1);
+           
+           for (String nextState: reachableStates(currState,currSymbol))
+           {
+               if (matches(word.substring(1), nextState))
+               {
+                   return true;
+               }
+           }
+       }
+       return false;
+    }
+    
+    
+    /**
+     * Returns a set of states that can be directly reached
+     * from the given state and the given transition
+     * @param state state whill will be analyzed
+     * @param symbol symbol that must be taken in order to reach another state
+     * @return set os reachable states
+     */
+    private TreeSet<String> reachableStates(String state, String symbol)
+    {
+        TreeSet<String> result;
+        result = transitionFunction.get(new Tupla(state, symbol));
+        if (result == null)
+            result = new TreeSet();
+        return result;
     }
     
     /**
@@ -183,70 +233,57 @@ public class Automaton {
         //TODO - iterate through the transitionFunction TreeMap,
         //create new states if a transition word has more than one
         //character, and somehow deal with the lambda transitionFunction
-        String currState, transition, newState, oldState, currSymbol;
-        Integer numSymbols, ii;
-        StateArray numNewStates = new StateArray();
-        numNewStates.initializeArray(states.size());
-        transitionMap newMap = new transitionMap();
-        TreeSet<String> nextStates;
-        TreeSet<String> aux = new TreeSet();
-        Tupla stateWord;
         
-        for (Iterator<Map.Entry<Tupla, TreeSet<String>>> it = transitionFunction.entrySet().iterator(); it.hasNext();) 
-        {
-            Map.Entry<Tupla,TreeSet<String>> entry = it.next();
-            currState = entry.getKey().getState();
-            nextStates = entry.getValue();
-            transition = entry.getKey().getWord();
-            
-            if (transition.length()>1)
-            {
-                
-                expandStates(newMap,nextStates, currState, transition, numNewStates  );           
-                
-                it.remove();
-                
-            }
-            
-           
-            
-        }
-        
-         this.transitionFunction.putAll(newMap);
-         
-         
-         
+         expandStates();
+         expandLambda();
          
         
     }
     
     
-    private void expandLambda(String currState, TreeSet<String> nextStates, String transition)
+    private void expandLambda()
     {
+        String currState, transition;
+        TreeSet<String> nextStates = new TreeSet();
         TreeSet<Tupla> stateAndTransition;
-        TreeMap<Tupla,TreeSet<String>> newMap = new transitionMap();
-        for (Iterator<Map.Entry<Tupla, TreeSet<String>>> it = transitionFunction.entrySet().iterator(); it.hasNext();) 
+        transitionMap newMap = new transitionMap();
+        while (hasLambdaTransitions(this.transitionFunction))
         {
-            Map.Entry<Tupla,TreeSet<String>> entry = it.next();
-            currState = entry.getKey().getState();
-            nextStates = entry.getValue();
-            transition = entry.getKey().getWord();
             
-            if (transition.contentEquals("v"))
+            newMap.putAll(transitionFunction);
+            for (Iterator<Map.Entry<Tupla, TreeSet<String>>> it = transitionFunction.entrySet().iterator(); it.hasNext();) 
             {
-                
-                for (String nextState: nextStates)
+                Map.Entry<Tupla,TreeSet<String>> entry = it.next();
+                currState = entry.getKey().getState();
+                nextStates = entry.getValue();
+                transition = entry.getKey().getWord();
+
+                if (transition.contentEquals("v"))
                 {
-                    if (initialStates.contains(currState))
+
+                    for (String nextState: nextStates)
                     {
-                        
+                        if (initialStates.contains(currState))
+                        {
+                            initialStates.add(nextState);
+                        }
+
+
+                        stateAndTransition = originStates(transitionFunction, currState);
+                        for (Tupla newTransition: stateAndTransition)
+                        {
+                            newMap.addTransition(newTransition.getState(), newTransition.getWord(), 
+                                    nextState);
+                        }
+
                     }
-                    
-                    
-                    stateAndTransition = originStates(transitionFunction, nextState);
-                    
+                    newMap.remove(new Tupla(currState, transition));
+                    it.remove();
                 }
             }
+
+            transitionFunction.putAll(newMap);
+            newMap.clear();
         }
     }
     
@@ -275,26 +312,49 @@ public class Automaton {
     }
     
   
+    private boolean hasLambdaTransitions(transitionMap map)
+    {
+        boolean result = false;
+        
+        for (Map.Entry<Tupla, TreeSet<String>> entry: map.entrySet())
+        {
+            if (entry.getKey().getWord().contentEquals("v"))
+                return true;
+        }
+        
+        return result;
+    }
            
     
     
     /**
      * Auxiliary function for the expansion of states when converting a GNFA to 
      * a regular  NFA
-     * @param newMap
-     * @param nextStates
-     * @param currState
-     * @param transition
-     * @param numNewStates 
      */
-    private void expandStates(transitionMap newMap, TreeSet<String> nextStates,
-            String currState, String transition, StateArray numNewStates )
+    private void expandStates()
     {
-        Tupla stateWord;
-        Integer numSymbols = transition.length(), ii;
-        String oldState, currSymbol, newState;
+        String currState, transition, newState, oldState, currSymbol;
+        Integer numSymbols, ii;
+        StateArray numNewStates = new StateArray();
+        numNewStates.initializeArray(states.size());
+        transitionMap newMap = new transitionMap();
+        newMap.putAll(transitionFunction);
+        TreeSet<String> nextStates;
         TreeSet<String> aux = new TreeSet();
-        for (String nextState: nextStates)
+        Tupla stateWord;
+        
+        for (Iterator<Map.Entry<Tupla, TreeSet<String>>> it = transitionFunction.entrySet().iterator(); it.hasNext();) 
+        {
+            Map.Entry<Tupla,TreeSet<String>> entry = it.next();
+            currState = entry.getKey().getState();
+            nextStates = entry.getValue();
+            transition = entry.getKey().getWord();
+
+            if (transition.length()>1)
+            {
+                numSymbols = transition.length();
+                
+                for (String nextState: nextStates)
                 {
                     oldState = currState;
                     for (ii=1;ii<=numSymbols;ii++)
@@ -316,26 +376,23 @@ public class Automaton {
                         states.add(newState);          
                         oldState = newState;
                     }
-                }
-        
-        
-    }
-    
-    private void initializeArray(ArrayList<Integer> numNewStates)
-    {
-        for (int ii=0;ii<states.size()+1;ii++)
-        {
-            numNewStates.add(1);
-        }
-    }
-    
-    private Integer getLatestState(ArrayList<Integer> numNewStates, int index )
-    {
-        Integer result = numNewStates.get(index);
-        numNewStates.set(index, result + 1);
-        return result;
-    }
+                }           
+                newMap.remove(new Tupla(currState, transition));
+                it.remove();
+                
+            }
             
+           
+            
+        }
+        
+         this.transitionFunction.putAll(newMap);
+         
+        
+        
+    }
+    
+
             
     public void printSets()
             /* Prints to std output the properties of the FSM. 
@@ -348,7 +405,7 @@ public class Automaton {
     
     
     
-    private void readAux(Scanner s, TreeSet<String> a, boolean isTransition)
+    private void readAux(Scanner s, Collection<String> a, boolean isTransition)
     {
         String currWord, currState, nextState, transition;
         TreeSet < String > nextStates = new TreeSet();
@@ -388,6 +445,10 @@ public class Automaton {
         return (initialStates.contains(state));
     }
  
+    private boolean isFinalState(String state)
+    {
+        return (finalStates.contains(state));
+    }
 
     
     
